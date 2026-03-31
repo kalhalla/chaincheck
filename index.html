@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>CHAINCHECK</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Sora:wght@300;400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#06070a;--surface:#0c0d12;--surface2:#111318;--surface3:#181a22;
+  --border:rgba(255,255,255,0.05);--border2:rgba(255,255,255,0.08);
+  --text:#e8e6e1;--text2:#b8b5ae;--dim:#3d3b47;--dim2:#2a2833;
+  --green:#00e87b;--green2:#00ff88;--green-bg:rgba(0,232,123,0.08);--green-glow:rgba(0,232,123,0.2);
+  --red:#ff3050;--red2:#ff4466;--red-bg:rgba(255,48,80,0.08);--red-glow:rgba(255,48,80,0.2);
+  --gold:#f0c030;--gold-bg:rgba(240,192,48,0.08);--gold-glow:rgba(240,192,48,0.2);
+  --accent:#3b8bff;--accent-bg:rgba(59,139,255,0.06);--accent-glow:rgba(59,139,255,0.15);
+  --orange:#ff8c00;--orange-bg:rgba(255,140,0,0.08);
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--tg-theme-bg-color, var(--bg));color:var(--tg-theme-text-color, var(--text));font-family:'Sora',sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
+#app{width:100%;height:100%;display:flex;flex-direction:column;max-width:480px;margin:0 auto;position:relative;overflow:hidden;padding-top:env(safe-area-inset-top,0);padding-bottom:env(safe-area-inset-bottom,0)}
+
+/* Welcome banner for new referral users */
+.welcome-banner{
+  display:none;width:100%;max-width:300px;padding:12px 16px;text-align:center;
+  border:1px solid rgba(0,232,123,0.2);background:rgba(0,232,123,0.04);
+  font-family:'JetBrains Mono',monospace;animation:welcomeFade 0.5s ease-out;
+}
+.welcome-banner .wb-title{font-size:12px;color:var(--green);font-weight:700;letter-spacing:1px}
+.welcome-banner .wb-amount{font-size:20px;color:var(--gold);font-weight:800;margin:4px 0}
+.welcome-banner .wb-sub{font-size:9px;color:var(--dim);letter-spacing:1px}
+@keyframes welcomeFade{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+
+/* Telegram user greeting */
+.menu-greeting{
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  color:var(--dim);letter-spacing:1px;
+}
+.menu-greeting b{color:var(--text)}
+#app::after{content:'';position:fixed;top:-50%;left:-50%;right:-50%;bottom:-50%;background:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");background-size:256px;pointer-events:none;z-index:9999;opacity:0.6;animation:grain .5s steps(1) infinite}
+@keyframes grain{0%{transform:translate(0,0)}25%{transform:translate(-5%,5%)}50%{transform:translate(5%,-5%)}75%{transform:translate(-5%,-5%)}100%{transform:translate(5%,5%)}}
+.shake{animation:shake .3s ease-out}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(2px)}}
+
+/* Shared button styles */
+.btn-base{font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:3px;background:transparent;cursor:pointer;transition:all .3s;text-transform:uppercase;text-align:center;border:1.5px solid}
+
+/* ===== MENU ===== */
+#menu{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px;position:absolute;top:0;left:0;z-index:100;background:var(--bg)}
+.logo{display:flex;flex-direction:column;align-items:center;gap:6px}
+.logo-mark{width:56px;height:56px;border:2px solid var(--green);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:800;color:var(--green);position:relative;box-shadow:0 0 30px var(--green-glow),inset 0 0 20px rgba(0,232,123,0.05);animation:logoPulse 3s ease-in-out infinite}
+@keyframes logoPulse{0%,100%{box-shadow:0 0 30px var(--green-glow),inset 0 0 20px rgba(0,232,123,0.05)}50%{box-shadow:0 0 50px var(--green-glow),inset 0 0 30px rgba(0,232,123,0.08)}}
+.logo-mark::before,.logo-mark::after{content:'';position:absolute;border:1px solid rgba(0,232,123,0.15)}
+.logo-mark::before{top:-6px;left:-6px;right:-6px;bottom:-6px}
+.logo-mark::after{top:-12px;left:-12px;right:-12px;bottom:-12px;border-color:rgba(0,232,123,0.06)}
+.logo-text{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:800;letter-spacing:8px;color:var(--text);margin-top:12px}
+.logo-sub{font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--dim);font-weight:300}
+
+/* Menu wallet button - tappable balance */
+.menu-wallet-btn{
+  display:flex;align-items:center;gap:8px;padding:10px 24px;
+  border:1px solid rgba(240,192,48,0.2);background:rgba(240,192,48,0.03);
+  font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all .3s;
+}
+.menu-wallet-btn:hover,.menu-wallet-btn:active{background:rgba(240,192,48,0.08);border-color:rgba(240,192,48,0.4)}
+.menu-wallet-btn .w-icon{font-size:18px;color:var(--gold)}
+.menu-wallet-btn .w-amount{font-size:20px;font-weight:800;color:var(--gold)}
+.menu-wallet-btn .w-label{font-size:9px;letter-spacing:2px;color:var(--dim)}
+.menu-wallet-btn .w-arrow{font-size:12px;color:var(--dim);margin-left:auto}
+
+.menu-explain{max-width:280px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:2.2;color:var(--dim)}
+.menu-explain b{color:var(--text);font-weight:600}
+.menu-explain .g{color:var(--green)}.menu-explain .r{color:var(--red)}.menu-explain .gold{color:var(--gold)}
+
+/* Token promise banner */
+.token-promise{
+  max-width:300px;padding:8px 14px;text-align:center;
+  border:1px solid rgba(0,232,123,0.12);background:rgba(0,232,123,0.03);
+  font-family:'JetBrains Mono',monospace;font-size:9px;line-height:1.8;
+  color:var(--dim);letter-spacing:0.5px;
+}
+.token-promise b{color:var(--green)}
+
+.play-btn{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;letter-spacing:4px;padding:16px 48px;background:transparent;border:1.5px solid var(--green);color:var(--green);cursor:pointer;transition:all .3s;text-transform:uppercase}
+.play-btn:hover,.play-btn:active{background:rgba(0,232,123,0.06);box-shadow:0 0 40px rgba(0,232,123,0.12)}
+.daily-label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--gold);padding:4px 12px;border:1px solid rgba(240,192,48,0.15);background:rgba(240,192,48,0.04)}
+.menu-footer{display:flex;gap:16px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:1px;flex-wrap:wrap;justify-content:center}
+.menu-footer b{color:var(--gold)}.menu-footer .s{color:var(--green)}
+.streak-mult{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--orange);letter-spacing:1px;padding:3px 8px;border:1px solid rgba(255,140,0,0.2);background:var(--orange-bg)}
+.challenge-banner{display:none;width:100%;max-width:300px;padding:12px 16px;text-align:center;border:1px solid rgba(255,140,0,0.2);background:rgba(255,140,0,0.04);font-family:'JetBrains Mono',monospace}
+.challenge-banner .challenger{font-size:12px;color:var(--orange);font-weight:700}
+.challenge-banner .challenge-score{font-size:20px;color:var(--text);font-weight:800;margin:4px 0}
+.challenge-banner .challenge-sub{font-size:9px;color:var(--dim);letter-spacing:2px}
+
+/* ===== WALLET ===== */
+#wallet{width:100%;height:100%;display:none;flex-direction:column;position:absolute;top:0;left:0;z-index:100;background:var(--bg);overflow-y:auto}
+.wal-header{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.wal-back{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim);cursor:pointer;padding:4px 8px;border:1px solid var(--border);transition:all .2s}
+.wal-back:hover{color:var(--text);border-color:var(--border2)}
+.wal-title{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;letter-spacing:3px;color:var(--dim);margin-left:12px}
+
+.wal-balance{display:flex;flex-direction:column;align-items:center;gap:4px;padding:28px 20px 20px}
+.wal-bal-amount{font-family:'JetBrains Mono',monospace;font-size:42px;font-weight:800;color:var(--gold);display:flex;align-items:center;gap:8px}
+.wal-bal-amount .icon{font-size:28px}
+.wal-bal-label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:3px;color:var(--dim)}
+
+/* Tier badge */
+.wal-tier{
+  display:flex;align-items:center;gap:8px;padding:10px 20px;margin:0 16px;
+  border:1px solid var(--border);background:var(--surface);
+  font-family:'JetBrains Mono',monospace;
+}
+.wal-tier-badge{font-size:18px}
+.wal-tier-info{flex:1}
+.wal-tier-name{font-size:11px;font-weight:700;letter-spacing:2px}
+.wal-tier-desc{font-size:9px;color:var(--dim);margin-top:2px}
+.wal-tier-mult{font-size:11px;font-weight:700;color:var(--orange)}
+
+/* Token promise in wallet */
+.wal-promise{
+  margin:12px 16px;padding:14px 16px;
+  border:1px solid rgba(0,232,123,0.15);background:rgba(0,232,123,0.03);
+  font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.9;
+  color:var(--text2);
+}
+.wal-promise .headline{font-size:11px;font-weight:700;color:var(--green);letter-spacing:2px;margin-bottom:6px}
+.wal-promise .dim{color:var(--dim)}
+
+/* Stats grid */
+.wal-stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;margin:12px 16px;background:var(--border)}
+.wal-stat{background:var(--bg);padding:12px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.wal-stat-val{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700}
+.wal-stat-val.gold{color:var(--gold)}.wal-stat-val.green{color:var(--green)}.wal-stat-val.accent{color:var(--accent)}
+.wal-stat-lbl{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim)}
+
+/* Referral section */
+.wal-ref{margin:12px 16px;padding:14px 16px;border:1px solid var(--border);background:var(--surface)}
+.wal-ref-title{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--dim);margin-bottom:8px}
+.wal-ref-code{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:800;color:var(--gold);letter-spacing:3px;margin-bottom:4px}
+.wal-ref-desc{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);line-height:1.8}
+.wal-ref-desc b{color:var(--gold)}
+.wal-ref-btn{margin-top:10px;width:100%;padding:10px;font-size:10px;border-color:var(--gold);color:var(--gold)}
+.wal-ref-btn:hover{background:var(--gold-bg)}
+
+/* Transaction history */
+.wal-tx-title{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--dim);margin:16px 16px 8px}
+.wal-tx-list{margin:0 16px 20px;display:flex;flex-direction:column;gap:1px}
+.wal-tx{display:flex;align-items:center;padding:10px 12px;background:var(--surface);gap:10px}
+.wal-tx-icon{font-size:14px;width:24px;text-align:center}
+.wal-tx-info{flex:1}
+.wal-tx-desc{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text2)}
+.wal-tx-date{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);margin-top:1px}
+.wal-tx-amount{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--gold)}
+.wal-tx-amount.bonus{color:var(--orange)}
+.wal-tx-empty{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);text-align:center;padding:20px}
+
+/* ===== GAME ===== */
+#game{width:100%;height:100%;display:none;flex-direction:column;position:absolute;top:0;left:0}
+.hud{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;flex-shrink:0;border-bottom:1px solid var(--border)}
+.hud-left{display:flex;align-items:center;gap:10px}
+.hud-mark{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:800;letter-spacing:2px;color:var(--dim)}
+.hud-tag{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--gold);background:var(--gold-bg);padding:2px 8px;border:1px solid rgba(240,192,48,0.12)}
+.hud-right{display:flex;align-items:center;gap:12px;font-family:'JetBrains Mono',monospace;font-size:12px}
+.hud-checks{display:flex;align-items:center;gap:4px;color:var(--gold);font-weight:600;font-size:11px}
+.hud-checks .chk-icon{font-size:12px}
+.hud-pts{color:var(--green);font-weight:700}
+.hud-pts-label{color:var(--dim);font-size:10px;margin-left:2px}
+.hud-mult{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--orange);padding:2px 6px;border:1px solid rgba(255,140,0,0.2);background:var(--orange-bg);display:none}
+.progress{display:flex;gap:5px;padding:10px 16px;justify-content:center;flex-shrink:0}
+.pip{flex:1;max-width:36px;height:3px;background:var(--dim2);transition:all .4s ease}
+.pip.current{background:var(--accent);box-shadow:0 0 6px var(--accent-glow)}
+.pip.correct{background:var(--green);box-shadow:0 0 6px var(--green-glow)}
+.pip.wrong{background:var(--red);box-shadow:0 0 6px var(--red-glow)}
+.round-bar{display:flex;justify-content:space-between;align-items:center;padding:2px 16px 6px;flex-shrink:0}
+.round-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--dim);text-transform:uppercase}
+.pair-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--dim)}
+.chart-area{flex:1;padding:0 12px;display:flex;flex-direction:column;justify-content:center;position:relative;min-height:0}
+.chart-box{width:100%;aspect-ratio:16/9;max-height:300px;background:var(--surface);border:1px solid var(--border);position:relative;overflow:hidden}
+.chart-box canvas{width:100%;height:100%;display:block}
+.chart-price{position:absolute;top:10px;left:12px;z-index:5;display:flex;flex-direction:column;gap:1px}
+.chart-price-val{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:var(--text);text-shadow:0 2px 16px rgba(0,0,0,0.9)}
+.chart-price-val .sym{font-size:14px;color:var(--dim);font-weight:400}
+.chart-tf{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);letter-spacing:1px;text-shadow:0 1px 8px rgba(0,0,0,0.9)}
+.chart-result{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);z-index:20;font-family:'JetBrains Mono',monospace;font-size:52px;font-weight:800;opacity:0;pointer-events:none}
+.chart-result.show{animation:resultPop .9s cubic-bezier(.16,1,.3,1) forwards}
+.chart-result.correct{color:var(--green);text-shadow:0 0 60px var(--green-glow)}
+.chart-result.wrong{color:var(--red);text-shadow:0 0 60px var(--red-glow)}
+@keyframes resultPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}30%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}50%{transform:translate(-50%,-50%) scale(.95)}70%{transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1) translateY(-20px)}}
+.chart-change{position:absolute;top:50%;right:16px;transform:translateY(-50%);z-index:15;font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;opacity:0;pointer-events:none;text-shadow:0 2px 12px rgba(0,0,0,0.8);transition:opacity .4s}
+.chart-change.show{opacity:1}.chart-change.up{color:var(--green)}.chart-change.down{color:var(--red)}
+.chart-checks{position:absolute;top:50%;left:50%;transform:translate(-50%,20px);z-index:21;font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--gold);opacity:0;pointer-events:none;text-shadow:0 0 12px var(--gold-glow)}
+.chart-checks.show{animation:chkEarn 1.4s ease-out forwards}
+@keyframes chkEarn{0%{opacity:0;transform:translate(-50%,20px)}20%{opacity:1;transform:translate(-50%,10px)}80%{opacity:1;transform:translate(-50%,-10px)}100%{opacity:0;transform:translate(-50%,-30px)}}
+.timer-track{height:2px;background:var(--surface2);flex-shrink:0;margin:6px 16px 0;overflow:hidden}
+.timer-bar{height:100%;width:100%;background:var(--accent);transition:width .1s linear}
+.timer-bar.urgent{background:var(--red)}
+.btn-row{display:flex;gap:10px;padding:10px 16px;flex-shrink:0}
+.call-btn{flex:1;padding:16px 0;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;letter-spacing:3px;border:1.5px solid;cursor:pointer;transition:all .15s;text-transform:uppercase;background:transparent;display:flex;align-items:center;justify-content:center;gap:8px}
+.call-btn .arrow{font-size:18px;line-height:1}
+.call-btn.h{border-color:rgba(0,232,123,0.2);color:var(--green)}
+.call-btn.h:hover,.call-btn.h:active{background:var(--green-bg);border-color:rgba(0,232,123,0.4);box-shadow:0 0 24px var(--green-glow)}
+.call-btn.l{border-color:rgba(255,48,80,0.2);color:var(--red)}
+.call-btn.l:hover,.call-btn.l:active{background:var(--red-bg);border-color:rgba(255,48,80,0.4);box-shadow:0 0 24px var(--red-glow)}
+.call-btn:disabled{opacity:.15;cursor:default;pointer-events:none}
+.call-btn:active{transform:scale(.97)}
+.bottom-bar{display:flex;justify-content:space-between;padding:4px 16px 10px;flex-shrink:0;font-family:'JetBrains Mono',monospace;font-size:10px}
+.bottom-bar .lbl{color:var(--dim)}.bottom-bar .val{color:var(--text2);font-weight:500}.bottom-bar .val.tm{color:var(--accent)}.bottom-bar .val.sat{color:var(--gold)}
+.countdown-overlay{position:absolute;top:0;left:0;right:0;bottom:0;z-index:60;background:rgba(6,7,10,.92);display:none;align-items:center;justify-content:center;flex-direction:column;gap:8px}
+.countdown-num{font-family:'JetBrains Mono',monospace;font-size:72px;font-weight:800;color:var(--green);text-shadow:0 0 60px var(--green-glow);animation:cdPop .6s cubic-bezier(.16,1,.3,1)}
+.countdown-text{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:4px;color:var(--dim);text-transform:uppercase}
+@keyframes cdPop{0%{opacity:0;transform:scale(2)}50%{opacity:1}100%{transform:scale(1)}}
+
+/* ===== GAME OVER ===== */
+#gameover{position:absolute;top:0;left:0;right:0;bottom:0;z-index:80;display:none;flex-direction:column;align-items:center;justify-content:flex-start;background:rgba(6,7,10,.97);backdrop-filter:blur(12px);padding:20px;overflow-y:auto}
+.go-inner{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;max-width:340px;padding-top:12px}
+.go-tag{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;letter-spacing:3px;color:var(--gold);text-transform:uppercase}
+.go-big{font-family:'JetBrains Mono',monospace;font-size:48px;font-weight:800;color:var(--text);line-height:1}
+.go-big .of{font-size:22px;color:var(--dim);font-weight:400}
+.go-grid{display:flex;gap:4px;padding:2px 0}
+.go-block{width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700}
+.go-block.c{background:var(--green);color:var(--bg)}.go-block.w{background:var(--red);color:var(--bg)}.go-block.t{background:var(--dim2);color:var(--dim)}
+.go-record{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:3px;color:var(--gold);display:none}
+.go-checks-box{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 20px;width:100%;border:1px solid rgba(240,192,48,0.15);background:rgba(240,192,48,0.03)}
+.go-checks-total{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:800;color:var(--gold);display:flex;align-items:center;gap:6px}
+.go-checks-total .icon{font-size:18px}
+.go-checks-breakdown{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.go-checks-breakdown .val{color:var(--gold)}
+.go-checks-mult{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--orange);margin-top:2px}
+.go-row{display:flex;gap:20px;padding:8px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);width:100%;justify-content:center}
+.go-cell{display:flex;flex-direction:column;align-items:center;gap:2px}
+.go-cell-v{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700}
+.go-cell-v.pts{color:var(--green)}.go-cell-v.time{color:var(--accent)}.go-cell-v.acc{color:var(--text)}
+.go-cell-l{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim)}
+.go-streak{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim)}
+.go-streak b{color:var(--green)}
+.share-box{width:100%;background:var(--surface);border:1px solid var(--border);padding:12px 14px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);line-height:1.8;text-align:center;white-space:pre}
+.share-border-silver .share-box{border-color:rgba(180,180,200,0.3)}
+.share-border-gold .share-box{border-color:rgba(240,192,48,0.4);box-shadow:0 0 16px var(--gold-bg)}
+.go-btns{display:flex;gap:6px;width:100%}
+.go-btn{flex:1;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;letter-spacing:2px;padding:12px 4px;background:transparent;border:1.5px solid;cursor:pointer;transition:all .3s;text-transform:uppercase;text-align:center}
+.go-btn.pri{border-color:var(--green);color:var(--green)}
+.go-btn.pri:hover{background:var(--green-bg)}
+.go-btn.sec{border-color:var(--dim);color:var(--dim)}
+.go-btn.sec:hover{border-color:var(--text2);color:var(--text2)}
+.go-btn.gold{border-color:rgba(240,192,48,0.3);color:var(--gold)}
+.go-btn.gold:hover{background:var(--gold-bg)}
+.go-btn.orange{border-color:rgba(255,140,0,0.3);color:var(--orange)}
+.go-btn.orange:hover{background:var(--orange-bg)}
+.go-ref{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);text-align:center;line-height:1.8}
+.go-ref b{color:var(--gold)}
+
+/* ===== SHOP ===== */
+#shop{width:100%;height:100%;display:none;flex-direction:column;position:absolute;top:0;left:0;z-index:100;background:var(--bg);overflow-y:auto;padding-bottom:20px}
+.shop-header{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.shop-back{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim);cursor:pointer;padding:4px 8px;border:1px solid var(--border);transition:all .2s}
+.shop-back:hover{color:var(--text);border-color:var(--border2)}
+.shop-title{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;letter-spacing:3px;color:var(--dim);margin-left:12px}
+.shop-balance{display:flex;flex-direction:column;align-items:center;gap:2px;padding:20px 16px 12px}
+.shop-bal-amount{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:800;color:var(--gold);display:flex;align-items:center;gap:6px}
+.shop-bal-amount .icon{font-size:20px}
+.shop-bal-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--dim)}
+.shop-grid{display:flex;flex-direction:column;gap:1px;margin:0 16px;background:var(--border)}
+.shop-item{display:flex;align-items:center;padding:14px 16px;background:var(--bg);gap:12px;transition:background .2s}
+.shop-item:active{background:var(--surface2)}
+.shop-item-icon{font-size:20px;width:28px;text-align:center}
+.shop-item-info{flex:1}
+.shop-item-name{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:var(--text);letter-spacing:0.5px}
+.shop-item-desc{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);margin-top:2px}
+.shop-item-btn{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;padding:8px 14px;background:transparent;border:1.5px solid rgba(59,139,255,0.3);color:var(--accent);cursor:pointer;transition:all .2s;white-space:nowrap;letter-spacing:1px}
+.shop-item-btn:active{background:var(--accent-bg);border-color:rgba(59,139,255,0.5)}
+.shop-item-btn:disabled{opacity:.3;cursor:default}
+.shop-note{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);text-align:center;padding:16px;line-height:1.8}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- MENU -->
+  <div id="menu">
+    <div class="logo">
+      <div class="logo-mark">CC</div>
+      <div class="logo-text">CHAINCHECK</div>
+      <div class="logo-sub">read the chart · call the move</div>
+    </div>
+
+    <div class="menu-greeting" id="menu-greeting"></div>
+
+    <div class="menu-wallet-btn" id="btn-wallet">
+      <span class="w-icon">◆</span>
+      <span class="w-amount" id="m-checks">0</span>
+      <span class="w-label">$CHECKS</span>
+      <span class="w-arrow">→</span>
+    </div>
+
+    <div class="welcome-banner" id="welcome-banner">
+      <div class="wb-title">WELCOME BONUS</div>
+      <div class="wb-amount" id="wb-amount">◆ 25 $CHECKS</div>
+      <div class="wb-sub">Credited to your wallet</div>
+    </div>
+
+    <div class="token-promise">
+      <b>$CHECKS</b> will be claimable on TON.<br>
+      Early players keep everything they earn.
+    </div>
+
+    <div class="menu-explain">
+      <b>10 BTC charts. 10 calls.</b><br>
+      <span class="g">▲ HIGHER</span> or <span class="r">▼ LOWER</span><br>
+      Earn <span class="gold">$CHECKS</span> for correct calls.<br>
+      Streaks multiply your earnings.
+    </div>
+
+    <div class="challenge-banner" id="challenge-banner">
+      <div class="challenge-sub">CHALLENGE FROM</div>
+      <div class="challenger" id="chal-name">@satoshi</div>
+      <div class="challenge-score" id="chal-score">847 PTS</div>
+      <div class="challenge-sub">CAN YOU BEAT IT?</div>
+    </div>
+
+    <div class="daily-label" id="daily-label"></div>
+    <button class="play-btn" id="btn-play">PLAY</button>
+    <button class="btn-base" style="font-size:10px;padding:10px 32px;border-color:rgba(59,139,255,0.25);color:var(--accent);letter-spacing:3px;width:auto" id="btn-shop">⭐ STAR SHOP</button>
+    <div class="menu-footer">
+      <span>BEST <b id="m-best">—</b></span>
+      <span class="s" id="m-streak"></span>
+      <span id="m-mult"></span>
+    </div>
+  </div>
+
+  <!-- WALLET -->
+  <div id="wallet">
+    <div class="wal-header">
+      <div class="wal-back" id="wal-back">← BACK</div>
+      <div class="wal-title">$CHECKS WALLET</div>
+    </div>
+
+    <div class="wal-balance">
+      <div class="wal-bal-amount"><span class="icon">◆</span><span id="wal-bal">0</span></div>
+      <div class="wal-bal-label">$CHECKS BALANCE</div>
+    </div>
+
+    <div class="wal-tier" id="wal-tier">
+      <div class="wal-tier-badge" id="wal-tier-badge">🔲</div>
+      <div class="wal-tier-info">
+        <div class="wal-tier-name" id="wal-tier-name">NEWCOMER</div>
+        <div class="wal-tier-desc" id="wal-tier-desc">Play daily to unlock tiers</div>
+      </div>
+      <div class="wal-tier-mult" id="wal-tier-mult">1×</div>
+    </div>
+
+    <div class="wal-promise">
+      <div class="headline">TOKEN LAUNCH COMING</div>
+      $CHECKS earned in-game will convert 1:1 to<br>
+      $CHECKS tokens on The Open Network (TON).<br>
+      <span class="dim">Higher tiers get priority claim access.<br>
+      OG players (100+ day streak) claim first.</span>
+    </div>
+
+    <div class="wal-stats" id="wal-stats">
+      <div class="wal-stat"><div class="wal-stat-val gold" id="ws-total">0</div><div class="wal-stat-lbl">Total Earned</div></div>
+      <div class="wal-stat"><div class="wal-stat-val green" id="ws-streak">0</div><div class="wal-stat-lbl">Day Streak</div></div>
+      <div class="wal-stat"><div class="wal-stat-val accent" id="ws-games">0</div><div class="wal-stat-lbl">Games Played</div></div>
+      <div class="wal-stat"><div class="wal-stat-val" id="ws-refs">0</div><div class="wal-stat-lbl">Referrals</div></div>
+    </div>
+
+    <div class="wal-ref">
+      <div class="wal-ref-title">INVITE FRIENDS</div>
+      <div class="wal-ref-code" id="wal-ref-code">CC______</div>
+      <div class="wal-ref-desc">
+        Share your code. You get <b>50 $CHECKS</b> per new player.<br>
+        They get <b>25 $CHECKS</b> to start.
+      </div>
+      <button class="btn-base wal-ref-btn" id="wal-ref-btn">COPY INVITE LINK</button>
+    </div>
+
+    <div class="wal-tx-title">TRANSACTION HISTORY</div>
+    <div class="wal-tx-list" id="wal-tx-list">
+      <div class="wal-tx-empty">No transactions yet. Play your first daily!</div>
+    </div>
+  </div>
+
+  <!-- SHOP -->
+  <div id="shop">
+    <div class="shop-header">
+      <div class="shop-back" id="shop-back">← BACK</div>
+      <div class="shop-title">⭐ STAR SHOP</div>
+    </div>
+    <div class="shop-balance">
+      <div class="shop-bal-amount"><span class="icon">◆</span><span id="shop-bal">0</span></div>
+      <div class="shop-bal-label">$CHECKS BALANCE</div>
+    </div>
+    <div class="shop-grid" id="shop-grid"></div>
+    <div class="shop-note">
+      Payments via Telegram Stars.<br>
+      Revenue supports game development.<br>
+      All purchases are instant.
+    </div>
+  </div>
+
+  <!-- GAME -->
+  <div id="game">
+    <div class="hud">
+      <div class="hud-left">
+        <div class="hud-mark">CHAINCHECK</div>
+        <div class="hud-tag" id="hud-tag"></div>
+        <div class="hud-mult" id="hud-mult"></div>
+      </div>
+      <div class="hud-right">
+        <div class="hud-checks"><span class="chk-icon">◆</span><span id="hud-checks">0</span></div>
+        <div><span class="hud-pts" id="hud-pts">0</span><span class="hud-pts-label"> PTS</span></div>
+      </div>
+    </div>
+    <div class="progress" id="progress"></div>
+    <div class="round-bar">
+      <div class="round-label" id="round-lbl">ROUND 1 / 10</div>
+      <div class="pair-label">BTC/USD · 1H</div>
+    </div>
+    <div class="chart-area">
+      <div class="chart-box" id="chart-box">
+        <canvas id="cv"></canvas>
+        <div class="chart-price"><div class="chart-price-val"><span class="sym">$ </span><span id="pv">0</span></div><div class="chart-tf" id="chart-tf">1H candles · historical</div></div>
+        <div class="chart-result" id="chart-result"></div>
+        <div class="chart-change" id="chart-change"></div>
+        <div class="chart-checks" id="chart-checks"></div>
+      </div>
+    </div>
+    <div class="timer-track"><div class="timer-bar" id="tbar"></div></div>
+    <div class="btn-row">
+      <button class="call-btn h" id="btn-h" disabled><span class="arrow">▲</span> HIGHER</button>
+      <button class="call-btn l" id="btn-l" disabled><span class="arrow">▼</span> LOWER</button>
+    </div>
+    <div class="bottom-bar">
+      <div><span class="lbl">CORRECT </span><span class="val" id="b-correct">0/0</span></div>
+      <div><span class="lbl">$CHECKS </span><span class="val sat" id="b-checks">+0</span></div>
+      <div><span class="lbl">TIME </span><span class="val tm" id="b-time">0.0s</span></div>
+    </div>
+    <div class="countdown-overlay" id="cd-overlay">
+      <div class="countdown-num" id="cd-num">3</div>
+      <div class="countdown-text" id="cd-text">get ready</div>
+    </div>
+  </div>
+
+  <!-- GAME OVER -->
+  <div id="gameover">
+    <div class="go-inner">
+      <div class="go-tag" id="go-tag"></div>
+      <div class="go-big" id="go-big">8<span class="of">/10</span></div>
+      <div class="go-grid" id="go-grid"></div>
+      <div class="go-record" id="go-rec">★ NEW BEST ★</div>
+      <div class="go-checks-box">
+        <div class="go-checks-total"><span class="icon">◆</span><span id="go-checks-earned">0</span> $CHECKS</div>
+        <div class="go-checks-breakdown" id="go-checks-breakdown"></div>
+        <div class="go-checks-mult" id="go-checks-mult"></div>
+      </div>
+      <div class="go-row">
+        <div class="go-cell"><div class="go-cell-v pts" id="go-pts">0</div><div class="go-cell-l">Points</div></div>
+        <div class="go-cell"><div class="go-cell-v time" id="go-tm">0.0s</div><div class="go-cell-l">Time</div></div>
+        <div class="go-cell"><div class="go-cell-v acc" id="go-acc">0%</div><div class="go-cell-l">Accuracy</div></div>
+      </div>
+      <div class="go-streak" id="go-streak"></div>
+      <div class="share-box" id="share-box"></div>
+      <div class="go-btns">
+        <button class="go-btn pri" id="btn-share">SHARE</button>
+        <button class="go-btn orange" id="btn-challenge">⚔️ CHALLENGE</button>
+        <button class="go-btn" style="border-color:rgba(59,139,255,0.3);color:var(--accent)" id="btn-go-shop">⭐ SHOP</button>
+        <button class="go-btn gold" id="btn-go-wallet">◆ WALLET</button>
+        <button class="go-btn sec" id="btn-back">MENU</button>
+      </div>
+      <div class="go-ref" id="go-ref"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== TELEGRAM WEBAPP INTEGRATION =====
+const TG = {
+  available: false,
+  user: null,
+  startParam: null,
+
+  init() {
+    const tg = window.Telegram?.WebApp;
+    if (!tg || !tg.initDataUnsafe?.user) {
+      console.log('Running outside Telegram — browser mode');
+      this.available = false;
+      return;
+    }
+
+    this.available = true;
+    this.user = tg.initDataUnsafe.user;
+    this.startParam = tg.initDataUnsafe.start_param || null;
+
+    // Tell Telegram we're ready and expand to full height
+    tg.ready();
+    tg.expand();
+    tg.enableClosingConfirmation();
+
+    // Request full-screen if available
+    if (tg.requestFullscreen) {
+      try { tg.requestFullscreen(); } catch(e) {}
+    }
+
+    // Set header colour to match our dark theme
+    try {
+      tg.setHeaderColor('#06070a');
+      tg.setBackgroundColor('#06070a');
+    } catch(e) {}
+
+    console.log('Telegram Mini App initialized:', this.user.first_name, '(ID:', this.user.id, ')');
+  },
+
+  // Get a stable user identifier — Telegram ID if available, otherwise localStorage fallback
+  getUserId() {
+    if (this.available && this.user) return 'tg_' + this.user.id;
+    let id = localStorage.getItem('cc-anon-id');
+    if (!id) { id = 'anon_' + Math.random().toString(36).substr(2, 10); localStorage.setItem('cc-anon-id', id); }
+    return id;
+  },
+
+  getUserName() {
+    if (this.available && this.user) return this.user.first_name || this.user.username || 'Player';
+    return 'Player';
+  },
+
+  // Share text — uses Telegram native share if available
+  share(text) {
+    const tg = window.Telegram?.WebApp;
+    if (this.available && tg) {
+      // Use Telegram's native share via URL scheme
+      const encoded = encodeURIComponent(text);
+      tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent('https://t.me/ChainCheckBot/play') + '&text=' + encoded);
+      return true;
+    }
+    return false; // fallback to navigator.share / clipboard
+  },
+
+  // Haptic feedback
+  haptic(type) {
+    const tg = window.Telegram?.WebApp;
+    if (this.available && tg?.HapticFeedback) {
+      if (type === 'success') tg.HapticFeedback.notificationOccurred('success');
+      else if (type === 'error') tg.HapticFeedback.notificationOccurred('error');
+      else if (type === 'tap') tg.HapticFeedback.impactOccurred('light');
+      else if (type === 'heavy') tg.HapticFeedback.impactOccurred('heavy');
+    }
+  },
+
+  // Back button handling
+  onBackButton(callback) {
+    const tg = window.Telegram?.WebApp;
+    if (this.available && tg?.BackButton) {
+      tg.BackButton.show();
+      tg.BackButton.onClick(callback);
+    }
+  },
+
+  hideBackButton() {
+    const tg = window.Telegram?.WebApp;
+    if (this.available && tg?.BackButton) {
+      tg.BackButton.hide();
+    }
+  },
+
+  // Get referral code from Telegram deep link start_param
+  getReferralFromStart() {
+    // In Telegram, deep links look like t.me/BotName?start=REF_CC4X7KM2
+    // The start_param would be "REF_CC4X7KM2"
+    if (this.startParam && this.startParam.startsWith('REF_')) {
+      return this.startParam.substring(4);
+    }
+    // Also check URL params for web fallback
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    return ref || null;
+  }
+};
+
+// Initialize Telegram on load
+TG.init();
+
+// ===== REFERRAL PROCESSING =====
+function processReferral() {
+  const refCode = TG.getReferralFromStart();
+  if (!refCode) return;
+
+  // Don't process if already processed a referral before
+  if (localStorage.getItem('cc-referred-by')) return;
+
+  // Don't credit yourself
+  if (refCode === getRefCode()) return;
+
+  // Credit the welcome bonus to the new player
+  localStorage.setItem('cc-referred-by', refCode);
+  addChecks(25);
+  addTotalEarned(25);
+  addTx('referral', 25, 'Welcome bonus from invite');
+
+  // Show welcome banner
+  const banner = document.getElementById('welcome-banner');
+  if (banner) {
+    banner.style.display = 'block';
+    // Hide after 5 seconds
+    setTimeout(() => { banner.style.display = 'none'; }, 5000);
+  }
+
+  // Note: crediting the REFERRER requires a backend (Supabase Phase 2)
+  // For now, store the referral relationship locally for future sync
+  console.log('Referral processed: referred by', refCode);
+}
+
+// ===== RNG =====
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function getDayNumber(){const e=new Date(2025,0,1),n=new Date;n.setHours(0,0,0,0);return Math.floor((n-e)/864e5)}
+function todayStr(){return new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}
+
+// ===== $CHECKS SYSTEM =====
+function getChecks(){return parseInt(localStorage.getItem('cc-checks'))||0}
+function addChecks(n){const s=getChecks()+n;localStorage.setItem('cc-checks',''+s);return s}
+function getTotalEarned(){return parseInt(localStorage.getItem('cc-total-earned'))||0}
+function addTotalEarned(n){const s=getTotalEarned()+n;localStorage.setItem('cc-total-earned',''+s);return s}
+function getGamesPlayed(){return parseInt(localStorage.getItem('cc-games'))||0}
+function addGame(){const g=getGamesPlayed()+1;localStorage.setItem('cc-games',''+g);return g}
+function getStreak(){return parseInt(localStorage.getItem('cc-streak'))||0}
+function getStreakMult(){const s=getStreak();if(s>=30)return 3;if(s>=14)return 2;if(s>=7)return 1.7;if(s>=3)return 1.3;return 1}
+function getStreakTier(){
+  const s=getStreak();
+  if(s>=100)return{name:'OG',badge:'💎',desc:'Founding player · Priority claim',mult:'3×',color:'var(--accent)',border:'gold'};
+  if(s>=30)return{name:'GOLD',badge:'🥇',desc:'30+ days · 3× earnings',mult:'3×',color:'var(--gold)',border:'gold'};
+  if(s>=14)return{name:'SILVER',badge:'🥈',desc:'14+ days · 2× earnings',mult:'2×',color:'#b0b0c0',border:'silver'};
+  if(s>=7)return{name:'BRONZE',badge:'🥉',desc:'7+ days · 1.7× earnings',mult:'1.7×',color:'#cd7f32',border:''};
+  if(s>=3)return{name:'STARTER',badge:'⚡',desc:'3+ days · 1.3× earnings',mult:'1.3×',color:'var(--orange)',border:''};
+  return{name:'NEWCOMER',badge:'🔲',desc:'Play daily to unlock tiers',mult:'1×',color:'var(--dim)',border:''};
+}
+function getRefCode(){let c=localStorage.getItem('cc-ref');if(!c){c='CC'+Math.random().toString(36).substr(2,6).toUpperCase();localStorage.setItem('cc-ref',c)}return c}
+
+// ===== TRANSACTION HISTORY =====
+function getTxHistory(){try{return JSON.parse(localStorage.getItem('cc-tx'))||[]}catch(e){return[]}}
+function addTx(type,amount,desc){
+  const tx=getTxHistory();
+  tx.unshift({type,amount,desc,date:Date.now()});
+  if(tx.length>50)tx.length=50; // keep last 50
+  localStorage.setItem('cc-tx',JSON.stringify(tx));
+}
+function formatTxDate(ts){
+  const d=new Date(ts);
+  const mins=Math.floor((Date.now()-ts)/60000);
+  if(mins<1)return'Just now';
+  if(mins<60)return mins+'m ago';
+  const hrs=Math.floor(mins/60);
+  if(hrs<24)return hrs+'h ago';
+  return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+}
+
+// ===== WALLET SCREEN =====
+function showWallet(){
+  document.getElementById('menu').style.display='none';
+  document.getElementById('gameover').style.display='none';
+  document.getElementById('wallet').style.display='flex';
+
+  document.getElementById('wal-bal').textContent=getChecks().toLocaleString();
+  document.getElementById('wal-ref-code').textContent=getRefCode();
+
+  // Tier
+  const tier=getStreakTier();
+  document.getElementById('wal-tier-badge').textContent=tier.badge;
+  document.getElementById('wal-tier-name').textContent=tier.name;
+  document.getElementById('wal-tier-name').style.color=tier.color;
+  document.getElementById('wal-tier-desc').textContent=tier.desc;
+  document.getElementById('wal-tier-mult').textContent=tier.mult;
+
+  // Stats
+  document.getElementById('ws-total').textContent=getTotalEarned().toLocaleString();
+  const streak=getStreak();
+  const lastDay=parseInt(localStorage.getItem('cc-last-day'))||0;
+  const dn=getDayNumber();
+  document.getElementById('ws-streak').textContent=(streak>0&&(lastDay===dn||lastDay===dn-1))?streak:'0';
+  document.getElementById('ws-games').textContent=getGamesPlayed();
+  document.getElementById('ws-refs').textContent=parseInt(localStorage.getItem('cc-ref-count'))||0;
+
+  // Transaction history
+  const txList=document.getElementById('wal-tx-list');
+  const txs=getTxHistory();
+  if(txs.length===0){
+    txList.innerHTML='<div class="wal-tx-empty">No transactions yet. Play your first daily!</div>';
+  }else{
+    txList.innerHTML='';
+    txs.forEach(tx=>{
+      const el=document.createElement('div');
+      el.className='wal-tx';
+      const icon=tx.type==='daily'?'📊':tx.type==='bonus'?'⚡':tx.type==='perfect'?'💯':tx.type==='referral'?'👥':'◆';
+      el.innerHTML=`<div class="wal-tx-icon">${icon}</div><div class="wal-tx-info"><div class="wal-tx-desc">${tx.desc}</div><div class="wal-tx-date">${formatTxDate(tx.date)}</div></div><div class="wal-tx-amount${tx.type==='bonus'||tx.type==='perfect'?' bonus':''}">+${tx.amount}</div>`;
+      txList.appendChild(el);
+    });
+  }
+}
+
+// ===== CHALLENGE =====
+function getChallengeFromURL(){const p=new URLSearchParams(window.location.search);const c=p.get('challenge');if(!c)return null;try{return JSON.parse(atob(c))}catch(e){return null}}
+function createChallengeURL(name,score,dayNum){return window.location.origin+window.location.pathname+'?challenge='+btoa(JSON.stringify({n:name||'Anon',s:score,d:dayNum}))}
+
+// ===== CHART DATA =====
+function generateCharts(rng,n){const charts=[];const tfs=['1H','4H','1D','15M','1H','4H','1H','1D','4H','1H'];for(let i=0;i<n;i++){const base=15000+rng()*90000,vol=.003+rng()*.012,drift=(rng()-.5)*.0008,bars=48,future=10,candles=[];let price=base;for(let j=0;j<bars+future;j++){const open=price,moves=[];for(let k=0;k<4;k++){let m=price*(drift+vol*(rng()*2-1));if(rng()<.04)m*=2.5;price=Math.max(price*.92,Math.min(price*1.08,price+m));moves.push(price)}const close=price,high=Math.max(open,close,...moves)*(1+rng()*.003),low=Math.min(open,close,...moves)*(1-rng()*.003),volume=500+rng()*2000+(Math.abs(close-open)/open)*10000;candles.push({open,high,low,close,volume})}const fp=candles[bars-1],lp=candles[bars+future-1];charts.push({visible:candles.slice(0,bars),future:candles.slice(bars-1,bars+future),freezePrice:fp.close,futurePrice:lp.close,answer:lp.close>fp.close?'higher':'lower',pct:((lp.close-fp.close)/fp.close*100),tf:tfs[i]||'1H'})}return charts}
+
+// ===== DRAW =====
+const cv=document.getElementById('cv'),cx=cv.getContext('2d');
+function drawCandles(chart,showFuture=false,revealProg=0){const box=document.getElementById('chart-box'),dpr=devicePixelRatio||1,W=box.clientWidth,H=box.clientHeight;cv.width=W*dpr;cv.height=H*dpr;cv.style.width=W+'px';cv.style.height=H+'px';cx.setTransform(dpr,0,0,dpr,0,0);cx.clearRect(0,0,W,H);const pad={t:40,r:12,b:32,l:6},cw=W-pad.l-pad.r,ch=H-pad.t-pad.b,vis=chart.visible;let fc=0;if(showFuture)fc=Math.floor(revealProg*(chart.future.length-1));const all=[...vis,...(showFuture?chart.future.slice(1,1+fc):[])],ts=vis.length+(chart.future.length-1);let aH=-Infinity,aL=Infinity;all.forEach(c=>{aH=Math.max(aH,c.high);aL=Math.min(aL,c.low)});const rng=aH-aL||1;aH+=rng*.02;aL-=rng*.02;const fR=aH-aL,cW2=cw/ts,bW=Math.max(2,cW2*.6),toX=i=>pad.l+i*cW2+cW2/2,toY=p=>pad.t+ch*(1-(p-aL)/fR);cx.strokeStyle='rgba(255,255,255,0.025)';cx.lineWidth=1;for(let i=0;i<5;i++){const y=pad.t+ch*(i/4);cx.beginPath();cx.moveTo(pad.l,y);cx.lineTo(W-pad.r,y);cx.stroke()}cx.font='9px "JetBrains Mono",monospace';cx.fillStyle='rgba(255,255,255,0.1)';cx.textAlign='right';for(let i=0;i<3;i++){const p=aH-fR*(i/2);cx.fillText('$'+Math.round(p).toLocaleString(),W-pad.r,toY(p)-4)}const maxVol=Math.max(...all.map(c=>c.volume)),volH=ch*.12;all.forEach((c,i)=>{const x=toX(i),h=(c.volume/maxVol)*volH,bull=c.close>=c.open,fut=i>=vis.length;cx.fillStyle=fut?(bull?'rgba(0,232,123,0.08)':'rgba(255,48,80,0.08)'):(bull?'rgba(0,232,123,0.05)':'rgba(255,48,80,0.05)');cx.fillRect(x-bW/2,pad.t+ch-h,bW,h)});vis.forEach((c,i)=>{const x=toX(i),bull=c.close>=c.open,col=bull?'rgba(0,232,123,':'rgba(255,48,80,';cx.strokeStyle=col+'0.5)';cx.lineWidth=1;cx.beginPath();cx.moveTo(x,toY(c.high));cx.lineTo(x,toY(c.low));cx.stroke();const top=toY(Math.max(c.open,c.close)),bot=toY(Math.min(c.open,c.close));cx.fillStyle=col+(bull?'0.7)':'0.8)');cx.fillRect(x-bW/2,top,bW,Math.max(1,bot-top))});const fx=toX(vis.length-1)+cW2/2;cx.setLineDash([3,3]);cx.strokeStyle='rgba(59,139,255,0.25)';cx.lineWidth=1;cx.beginPath();cx.moveTo(fx,pad.t);cx.lineTo(fx,pad.t+ch);cx.stroke();cx.setLineDash([]);cx.font='8px "JetBrains Mono",monospace';cx.fillStyle='rgba(59,139,255,0.4)';cx.textAlign='center';cx.fillText('NOW',fx,pad.t+ch+12);if(showFuture&&fc>0){const sl=chart.future.slice(1,1+fc),up=chart.futurePrice>chart.freezePrice;sl.forEach((c,i)=>{const idx=vis.length+i,x=toX(idx),bull=c.close>=c.open,col=up?'rgba(0,232,123,':'rgba(255,48,80,';cx.strokeStyle=col+'0.6)';cx.lineWidth=1;cx.beginPath();cx.moveTo(x,toY(c.high));cx.lineTo(x,toY(c.low));cx.stroke();const top=toY(Math.max(c.open,c.close)),bot=toY(Math.min(c.open,c.close));cx.fillStyle=col+'0.85)';cx.fillRect(x-bW/2,top,bW,Math.max(1,bot-top))});const last=sl[sl.length-1];if(last){const ey=toY(last.close);cx.setLineDash([2,2]);cx.strokeStyle=up?'rgba(0,232,123,0.3)':'rgba(255,48,80,0.3)';cx.beginPath();cx.moveTo(pad.l,ey);cx.lineTo(W-pad.r,ey);cx.stroke();cx.setLineDash([])}}if(!showFuture){const last=vis[vis.length-1],lx=toX(vis.length-1),ly=toY(last.close),t=Date.now()*.004;for(let i=3;i>0;i--){const r=3+i*3+Math.sin(t+i)*1.5;cx.beginPath();cx.arc(lx,ly,r,0,Math.PI*2);cx.fillStyle=`rgba(0,232,123,${.06-i*.015})`;cx.fill()}cx.beginPath();cx.arc(lx,ly,3,0,Math.PI*2);cx.fillStyle='#00e87b';cx.fill()}document.getElementById('pv').textContent=Math.round(showFuture&&fc>0?chart.future[fc].close:chart.freezePrice).toLocaleString()}
+
+// ===== STATE =====
+const ROUNDS=10,RTIME=8;let S={},animId=null;
+
+function initGame(){const dn=getDayNumber(),rng=mulberry32(dn*77777+12345),mult=getStreakMult();S={phase:'playing',dayNum:dn,charts:generateCharts(rng,ROUNDS),round:0,results:[],totalTime:0,score:0,roundStart:0,timerInt:null,timeLeft:RTIME,checksEarned:0,checksBase:0,checksSpeed:0,checksBonus:0,streakMult:mult,challenge:getChallengeFromURL()};document.getElementById('menu').style.display='none';document.getElementById('wallet').style.display='none';document.getElementById('gameover').style.display='none';document.getElementById('game').style.display='flex';document.getElementById('hud-tag').textContent='#'+dn;document.getElementById('hud-pts').textContent='0';document.getElementById('hud-checks').textContent=getChecks();document.getElementById('b-checks').textContent='+0';const m=document.getElementById('hud-mult');if(mult>1){m.style.display='block';m.textContent=mult.toFixed(1)+'× STREAK'}else m.style.display='none';buildPips();showCountdown(()=>startRound())}
+
+function buildPips(){const el=document.getElementById('progress');el.innerHTML='';for(let i=0;i<ROUNDS;i++){const d=document.createElement('div');d.className='pip'+(i===0?' current':'');d.id='pip'+i;el.appendChild(d)}}
+
+function showCountdown(cb){const ov=document.getElementById('cd-overlay'),num=document.getElementById('cd-num'),txt=document.getElementById('cd-text');ov.style.display='flex';let c=3;txt.textContent=S.streakMult>1?S.streakMult.toFixed(1)+'× streak bonus active':'get ready';num.textContent=c;num.style.animation='none';void num.offsetWidth;num.style.animation='';const iv=setInterval(()=>{c--;if(c>0){num.textContent=c;num.style.animation='none';void num.offsetWidth;num.style.animation=''}else{num.textContent='GO';num.style.color='var(--green)';num.style.animation='none';void num.offsetWidth;num.style.animation='';setTimeout(()=>{ov.style.display='none';num.style.color='';cb()},400);clearInterval(iv)}},700)}
+
+function startRound(){const r=S.round,chart=S.charts[r];document.getElementById('round-lbl').textContent='ROUND '+(r+1)+' / '+ROUNDS;document.getElementById('chart-tf').textContent=chart.tf+' candles · historical';document.getElementById('b-correct').textContent=S.results.filter(x=>x.correct).length+'/'+r;document.getElementById('chart-result').className='chart-result';document.getElementById('chart-change').className='chart-change';document.getElementById('chart-checks').className='chart-checks';for(let i=0;i<ROUNDS;i++){const p=document.getElementById('pip'+i);if(i<r)p.className='pip '+(S.results[i].correct?'correct':'wrong');else if(i===r)p.className='pip current';else p.className='pip'}drawCandles(chart);document.getElementById('btn-h').disabled=false;document.getElementById('btn-l').disabled=false;S.timeLeft=RTIME;S.roundStart=performance.now();const tbar=document.getElementById('tbar');tbar.style.width='100%';tbar.classList.remove('urgent');clearInterval(S.timerInt);S.timerInt=setInterval(()=>{const el=(performance.now()-S.roundStart)/1000;S.timeLeft=Math.max(0,RTIME-el);tbar.style.width=(S.timeLeft/RTIME*100)+'%';if(S.timeLeft<2.5)tbar.classList.add('urgent');document.getElementById('b-time').textContent=(S.totalTime+el).toFixed(1)+'s';if(S.timeLeft<=0){clearInterval(S.timerInt);makeCall(null)}},50);cancelAnimationFrame(animId);(function anim(){if(S.phase!=='playing')return;drawCandles(S.charts[S.round]);animId=requestAnimationFrame(anim)})()}
+
+function makeCall(call){clearInterval(S.timerInt);cancelAnimationFrame(animId);document.getElementById('btn-h').disabled=true;document.getElementById('btn-l').disabled=true;const chart=S.charts[S.round],elapsed=Math.min((performance.now()-S.roundStart)/1000,RTIME),timeout=call===null,correct=!timeout&&call===chart.answer;let pts=0;if(correct){const speed=Math.max(0,Math.floor((1-elapsed/RTIME)*100));pts=100+speed}let roundChk=0,chkBase=0,chkSpeed=0;if(correct){chkBase=10;if(elapsed<3)chkSpeed=5;roundChk=Math.floor((chkBase+chkSpeed)*S.streakMult)}S.checksBase+=chkBase;S.checksSpeed+=chkSpeed;S.checksEarned+=roundChk;S.results.push({correct,time:elapsed,pts,timeout,checks:roundChk});S.totalTime+=elapsed;S.score+=pts;document.getElementById('hud-pts').textContent=S.score;document.getElementById('b-checks').textContent='+'+S.checksEarned;const rf=document.getElementById('chart-result');rf.textContent=timeout?'TIME':(correct?'✓':'✗');rf.className='chart-result show '+(correct?'correct':'wrong');TG.haptic(correct?'success':'error');if(roundChk>0){const cs=document.getElementById('chart-checks');cs.textContent='+'+roundChk+' $CHECKS';cs.className='chart-checks show'}if(!correct)document.getElementById('chart-box').classList.add('shake');setTimeout(()=>document.getElementById('chart-box').classList.remove('shake'),300);const dur=900,start=performance.now();(function animReveal(){const t=Math.min(1,(performance.now()-start)/dur),e=1-Math.pow(1-t,3);drawCandles(chart,true,e);if(t<1){requestAnimationFrame(animReveal)}else{const ch=document.getElementById('chart-change'),up=chart.pct>0;ch.textContent=(up?'+':'')+chart.pct.toFixed(2)+'%';ch.className='chart-change show '+(up?'up':'down');document.getElementById('pip'+S.round).className='pip '+(correct?'correct':'wrong');setTimeout(()=>{S.round++;if(S.round>=ROUNDS)gameOver();else startRound()},700)}})()} 
+
+function gameOver(){
+  S.phase='over';
+  const correct=S.results.filter(x=>x.correct).length;
+  const acc=Math.round(correct/ROUNDS*100);
+  const tm=S.totalTime.toFixed(1);
+
+  let perfectBonus=0;
+  if(correct===ROUNDS){perfectBonus=Math.floor(100*S.streakMult);S.checksEarned+=perfectBonus;S.checksBonus=perfectBonus}
+
+  // Credit checks + track
+  addChecks(S.checksEarned);
+  addTotalEarned(S.checksEarned);
+  const games=addGame();
+  document.getElementById('hud-checks').textContent=getChecks();
+
+  // Add transaction
+  addTx('daily',S.checksEarned,'Daily #'+S.dayNum+' · '+correct+'/'+ROUNDS+' correct');
+  if(perfectBonus>0)addTx('perfect',perfectBonus,'Perfect game bonus!');
+
+  // UI
+  document.getElementById('go-tag').textContent='CHAINCHECK #'+S.dayNum+' · '+todayStr();
+  document.getElementById('go-big').innerHTML=correct+'<span class="of">/'+ROUNDS+'</span>';
+  document.getElementById('go-pts').textContent=S.score;
+  document.getElementById('go-tm').textContent=tm+'s';
+  document.getElementById('go-acc').textContent=acc+'%';
+  document.getElementById('go-checks-earned').textContent=S.checksEarned;
+
+  let bd=[];
+  bd.push('<span>Base: <span class="val">'+S.checksBase+'</span></span>');
+  if(S.checksSpeed>0)bd.push('<span>Speed: <span class="val">+'+S.checksSpeed+'</span></span>');
+  if(S.checksBonus>0)bd.push('<span>Perfect: <span class="val">+'+S.checksBonus+'</span></span>');
+  document.getElementById('go-checks-breakdown').innerHTML=bd.join('');
+  const me=document.getElementById('go-checks-mult');
+  if(S.streakMult>1)me.textContent=S.streakMult.toFixed(1)+'× streak multiplier applied';
+  else me.textContent='Start a 3-day streak for 1.3× $CHECKS bonus';
+
+  const grid=document.getElementById('go-grid');grid.innerHTML='';
+  S.results.forEach(r=>{const b=document.createElement('div');b.className='go-block '+(r.timeout?'t':(r.correct?'c':'w'));b.textContent=r.timeout?'—':(r.correct?'▲':'▼');grid.appendChild(b)});
+
+  let streak=parseInt(localStorage.getItem('cc-streak'))||0;
+  const lastDay=parseInt(localStorage.getItem('cc-last-day'))||0;
+  if(lastDay===S.dayNum-1||lastDay===0)streak++;
+  else if(lastDay!==S.dayNum)streak=1;
+  localStorage.setItem('cc-streak',''+streak);
+  localStorage.setItem('cc-last-day',''+S.dayNum);
+  const sEl=document.getElementById('go-streak');
+  if(streak>1){const nt=getNextStreakTarget(streak);sEl.innerHTML='🔥 <b>'+streak+'</b> day streak'+(nt?' · next tier at '+nt+' days':'')}
+  else sEl.textContent='Play tomorrow to start a streak';
+
+  const best=parseInt(localStorage.getItem('cc-best'))||0;
+  const isNew=S.score>best;if(isNew)localStorage.setItem('cc-best',''+S.score);
+  document.getElementById('go-rec').style.display=isNew?'block':'none';
+
+  const tier=getStreakTier();
+  document.querySelector('.go-inner').className='go-inner'+(tier.border?' share-border-'+tier.border:'');
+
+  const ref=getRefCode();
+  const blocks=S.results.map(r=>r.timeout?'⬛':(r.correct?'🟩':'🟥')).join('');
+  const streakLine=streak>1?'🔥 '+streak+' day streak':'';
+  const checksLine='◆ '+S.checksEarned+' $CHECKS earned';
+  const playLink=TG.available?'Play → t.me/ChainCheckBot/play?startapp=REF_'+ref:'Play → chaincheck.co/?ref='+ref;
+  const lines=['CHAINCHECK #'+S.dayNum,blocks,correct+'/'+ROUNDS+' · '+S.score+'pts · '+tm+'s',checksLine,streakLine,'',playLink].filter(Boolean);
+  document.getElementById('share-box').textContent=lines.join('\n');
+  document.getElementById('go-ref').innerHTML='Your code: <b>'+ref+'</b> · Earn <b>50 $CHECKS</b> per invite';
+
+  localStorage.setItem('cc-d-'+S.dayNum,JSON.stringify({score:S.score,correct,time:tm,checks:S.checksEarned}));
+  document.getElementById('gameover').style.display='flex';
+}
+
+function getNextStreakTarget(s){if(s<3)return 3;if(s<7)return 7;if(s<14)return 14;if(s<30)return 30;if(s<100)return 100;return null}
+
+// ===== SHARING HELPER =====
+function shareText(text, fallbackBtn, fallbackLabel) {
+  // Try Telegram native share first
+  if (TG.share(text)) return;
+  // Fallback to Web Share API or clipboard
+  if (navigator.share) navigator.share({text}).catch(()=>{});
+  else if (navigator.clipboard) navigator.clipboard.writeText(text).then(()=>{
+    if (fallbackBtn) { fallbackBtn.textContent='COPIED!'; setTimeout(()=>fallbackBtn.textContent=fallbackLabel,2000); }
+  });
+}
+
+// ===== EVENTS =====
+document.getElementById('btn-play').onclick=()=>{ TG.haptic('tap'); TG.hideBackButton(); initGame(); };
+document.getElementById('btn-h').onclick=()=>{ TG.haptic('tap'); makeCall('higher'); };
+document.getElementById('btn-l').onclick=()=>{ TG.haptic('tap'); makeCall('lower'); };
+document.getElementById('btn-wallet').onclick=()=>{ TG.haptic('tap'); showWallet(); TG.onBackButton(()=>{ document.getElementById('wallet').style.display='none'; document.getElementById('menu').style.display='flex'; TG.hideBackButton(); setupMenu(); }); };
+document.getElementById('btn-go-wallet').onclick=()=>{ TG.haptic('tap'); document.getElementById('gameover').style.display='none'; showWallet(); TG.onBackButton(()=>{ document.getElementById('wallet').style.display='none'; document.getElementById('menu').style.display='flex'; TG.hideBackButton(); setupMenu(); }); };
+document.getElementById('wal-back').onclick=()=>{document.getElementById('wallet').style.display='none';document.getElementById('menu').style.display='flex';TG.hideBackButton();setupMenu()};
+document.getElementById('wal-ref-btn').onclick=()=>{
+  const ref=getRefCode();
+  // In Telegram, share a deep link to the bot
+  const botLink='https://t.me/ChainCheckBot/play?startapp=REF_'+ref;
+  const text='Play ChainCheck — earn $CHECKS daily by reading BTC charts.\n\n'+botLink;
+  const btn=document.getElementById('wal-ref-btn');
+  shareText(text, btn, 'COPY INVITE LINK');
+};
+document.getElementById('btn-share').onclick=()=>{
+  const t=document.getElementById('share-box').textContent;
+  const btn=document.getElementById('btn-share');
+  shareText(t, btn, 'SHARE');
+};
+document.getElementById('btn-challenge').onclick=()=>{
+  const name=TG.getUserName();
+  const ref=getRefCode();
+  const botLink='https://t.me/ChainCheckBot/play?startapp=CHAL_'+btoa(JSON.stringify({n:name,s:S.score,d:S.dayNum})).replace(/=/g,'');
+  const text='⚔️ I scored '+S.score+' on CHAINCHECK #'+S.dayNum+'. Beat me!\n\n'+botLink;
+  const btn=document.getElementById('btn-challenge');
+  shareText(text, btn, '⚔️ CHALLENGE');
+};
+document.getElementById('btn-back').onclick=()=>{document.getElementById('gameover').style.display='none';document.getElementById('game').style.display='none';document.getElementById('menu').style.display='flex';TG.hideBackButton();setupMenu()};
+document.addEventListener('keydown',e=>{if(S.phase!=='playing')return;if(e.key==='ArrowUp'||e.key==='h')makeCall('higher');if(e.key==='ArrowDown'||e.key==='l')makeCall('lower')});
+
+function setupMenu(){
+  const dn=getDayNumber();
+  document.getElementById('daily-label').textContent='DAILY #'+dn+' · '+todayStr();
+  document.getElementById('m-best').textContent=parseInt(localStorage.getItem('cc-best'))||'—';
+  document.getElementById('m-checks').textContent=getChecks().toLocaleString();
+  const streak=getStreak(),last=parseInt(localStorage.getItem('cc-last-day'))||0;
+  document.getElementById('m-streak').innerHTML=(streak>0&&(last===dn||last===dn-1))?'🔥 '+streak+' day streak':'';
+  const mult=getStreakMult();
+  const me=document.getElementById('m-mult');
+  if(mult>1)me.innerHTML='<span class="streak-mult">'+mult.toFixed(1)+'× $CHECKS</span>';else me.textContent='';
+
+  // Telegram greeting
+  const greetEl=document.getElementById('menu-greeting');
+  if(TG.available){
+    greetEl.innerHTML='Welcome back, <b>'+TG.getUserName()+'</b>';
+  } else {
+    greetEl.textContent='';
+  }
+
+  // Challenge check (from Telegram deep link or URL)
+  let chal=null;
+  if(TG.startParam && TG.startParam.startsWith('CHAL_')){
+    try{ chal=JSON.parse(atob(TG.startParam.substring(5))); }catch(e){}
+  }
+  if(!chal) chal=getChallengeFromURL();
+  const banner=document.getElementById('challenge-banner');
+  if(chal){banner.style.display='block';document.getElementById('chal-name').textContent=chal.n||'Someone';document.getElementById('chal-score').textContent=chal.s+' PTS'}else banner.style.display='none';
+
+  TG.hideBackButton();
+}
+
+// ===== STAR SHOP =====
+const BOT_SERVER_URL = ''; // ← SET THIS to your bot server Vercel URL
+
+const SHOP_PRODUCTS = [
+  { id: 'extra_3', name: '3 Extra Plays', desc: 'Play 3 more daily rounds today', stars: 25, icon: '🎯', action: () => { addExtraPlays(3); addChecks(50); addTotalEarned(50); addTx('bonus', 50, 'Bonus: 3 plays pack'); }},
+  { id: 'extra_10', name: '10 Extra Plays', desc: 'Play 10 more daily rounds today', stars: 75, icon: '🎯', action: () => { addExtraPlays(10); addChecks(200); addTotalEarned(200); addTx('bonus', 200, 'Bonus: 10 plays pack'); }},
+  { id: 'streak_shield', name: 'Streak Shield', desc: 'Miss 1 day without losing your streak', stars: 50, icon: '🛡️', action: () => { localStorage.setItem('cc-shield-until', ''+(Date.now()+86400000)); addChecks(25); addTotalEarned(25); addTx('bonus', 25, 'Streak shield activated'); }},
+  { id: 'checks_500', name: '500 $CHECKS', desc: 'Instant balance boost', stars: 30, icon: '◆', action: () => { addChecks(500); addTotalEarned(500); addTx('bonus', 500, 'Purchased 500 $CHECKS'); }},
+  { id: 'checks_2000', name: '2,000 $CHECKS', desc: 'Jump tiers faster', stars: 100, icon: '💎', action: () => { addChecks(2000); addTotalEarned(2000); addTx('bonus', 2000, 'Purchased 2,000 $CHECKS'); }},
+];
+
+function getExtraPlays(){ return parseInt(localStorage.getItem('cc-extra-'+getDayNumber()))||0 }
+function addExtraPlays(n){ const k='cc-extra-'+getDayNumber(); localStorage.setItem(k, ''+(parseInt(localStorage.getItem(k))||0)+n); }
+
+function showShop(){
+  document.getElementById('menu').style.display='none';
+  document.getElementById('gameover').style.display='none';
+  document.getElementById('wallet').style.display='none';
+  document.getElementById('shop').style.display='flex';
+  document.getElementById('shop-bal').textContent=getChecks().toLocaleString();
+
+  const grid=document.getElementById('shop-grid');
+  grid.innerHTML='';
+  SHOP_PRODUCTS.forEach(p => {
+    const div=document.createElement('div');
+    div.className='shop-item';
+    div.innerHTML=`<div class="shop-item-icon">${p.icon}</div><div class="shop-item-info"><div class="shop-item-name">${p.name}</div><div class="shop-item-desc">${p.desc}</div></div><button class="shop-item-btn" data-id="${p.id}">⭐ ${p.stars}</button>`;
+    div.querySelector('.shop-item-btn').addEventListener('click', () => purchaseProduct(p));
+    grid.appendChild(div);
+  });
+
+  TG.onBackButton(() => { document.getElementById('shop').style.display='none'; document.getElementById('menu').style.display='flex'; TG.hideBackButton(); setupMenu(); });
+}
+
+async function purchaseProduct(product){
+  TG.haptic('tap');
+
+  if (!BOT_SERVER_URL) {
+    // No backend configured — give freebie for testing
+    const tg = window.Telegram?.WebApp;
+    if (tg && TG.available) {
+      tg.showAlert('Stars Shop is being configured. Enjoy a free sample!');
+    }
+    product.action();
+    showShop(); // refresh
+    return;
+  }
+
+  try {
+    const res = await fetch(BOT_SERVER_URL + '/create-invoice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId: product.id, userId: TG.getUserId() })
+    });
+    const data = await res.json();
+    const tg = window.Telegram?.WebApp;
+
+    if (data.invoiceLink && tg) {
+      tg.openInvoice(data.invoiceLink, (status) => {
+        if (status === 'paid') {
+          TG.haptic('success');
+          product.action();
+          showShop(); // refresh balance
+        }
+      });
+    }
+  } catch(err) {
+    console.error('Purchase error:', err);
+    const tg = window.Telegram?.WebApp;
+    if (tg) tg.showAlert('Payment failed. Please try again.');
+  }
+}
+
+// Shop button handlers
+document.getElementById('btn-shop').onclick = () => { TG.haptic('tap'); showShop(); };
+document.getElementById('btn-go-shop').onclick = () => { TG.haptic('tap'); document.getElementById('gameover').style.display='none'; showShop(); };
+document.getElementById('shop-back').onclick = () => { document.getElementById('shop').style.display='none'; document.getElementById('menu').style.display='flex'; TG.hideBackButton(); setupMenu(); };
+
+// Process referral on first load
+processReferral();
+setupMenu();
+</script>
+</body>
+</html>
