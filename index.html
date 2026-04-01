@@ -870,8 +870,6 @@ const SHOP_PRODUCTS = [
   { id: 'extra_3', name: '3 Extra Plays', desc: 'Play 3 more daily rounds today', stars: 25, icon: '🎯', action: () => { addExtraPlays(3); addChecks(50); addTotalEarned(50); addTx('bonus', 50, 'Bonus: 3 plays pack'); }},
   { id: 'extra_10', name: '10 Extra Plays', desc: 'Play 10 more daily rounds today', stars: 75, icon: '🎯', action: () => { addExtraPlays(10); addChecks(200); addTotalEarned(200); addTx('bonus', 200, 'Bonus: 10 plays pack'); }},
   { id: 'streak_shield', name: 'Streak Shield', desc: 'Miss 1 day without losing your streak', stars: 50, icon: '🛡️', action: () => { localStorage.setItem('cc-shield-until', ''+(Date.now()+86400000)); addChecks(25); addTotalEarned(25); addTx('bonus', 25, 'Streak shield activated'); }},
-  { id: 'checks_500', name: '500 $CHECKS', desc: 'Instant balance boost', stars: 30, icon: '◆', action: () => { addChecks(500); addTotalEarned(500); addTx('bonus', 500, 'Purchased 500 $CHECKS'); }},
-  { id: 'checks_2000', name: '2,000 $CHECKS', desc: 'Jump tiers faster', stars: 100, icon: '💎', action: () => { addChecks(2000); addTotalEarned(2000); addTx('bonus', 2000, 'Purchased 2,000 $CHECKS'); }},
 ];
 
 function getExtraPlays(){ return parseInt(localStorage.getItem('cc-extra-'+getDayNumber()))||0 }
