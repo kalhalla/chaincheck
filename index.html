@@ -529,7 +529,7 @@ const TG = {
     if (this.available && tg) {
       // Use Telegram's native share via URL scheme
       const encoded = encodeURIComponent(text);
-      tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent('https://t.me/ChainCheckBot/play') + '&text=' + encoded);
+      tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent('https://t.me/ChainCheckGameBot/play') + '&text=' + encoded);
       return true;
     }
     return false; // fallback to navigator.share / clipboard
@@ -779,7 +779,7 @@ function gameOver(){
   const blocks=S.results.map(r=>r.timeout?'⬛':(r.correct?'🟩':'🟥')).join('');
   const streakLine=streak>1?'🔥 '+streak+' day streak':'';
   const checksLine='◆ '+S.checksEarned+' $CHECKS earned';
-  const playLink=TG.available?'Play → t.me/ChainCheckBot/play?startapp=REF_'+ref:'Play → chaincheck.co/?ref='+ref;
+  const playLink=TG.available?'Play → t.me/ChainCheckGameBot/play?startapp=REF_'+ref:'Play → chaincheck.co/?ref='+ref;
   const lines=['CHAINCHECK #'+S.dayNum,blocks,correct+'/'+ROUNDS+' · '+S.score+'pts · '+tm+'s',checksLine,streakLine,'',playLink].filter(Boolean);
   document.getElementById('share-box').textContent=lines.join('\n');
   document.getElementById('go-ref').innerHTML='Your code: <b>'+ref+'</b> · Earn <b>50 $CHECKS</b> per invite';
@@ -811,7 +811,7 @@ document.getElementById('wal-back').onclick=()=>{document.getElementById('wallet
 document.getElementById('wal-ref-btn').onclick=()=>{
   const ref=getRefCode();
   // In Telegram, share a deep link to the bot
-  const botLink='https://t.me/ChainCheckBot/play?startapp=REF_'+ref;
+  const botLink='https://t.me/ChainCheckGameBot/play?startapp=REF_'+ref;
   const text='Play ChainCheck — earn $CHECKS daily by reading BTC charts.\n\n'+botLink;
   const btn=document.getElementById('wal-ref-btn');
   shareText(text, btn, 'COPY INVITE LINK');
@@ -824,7 +824,7 @@ document.getElementById('btn-share').onclick=()=>{
 document.getElementById('btn-challenge').onclick=()=>{
   const name=TG.getUserName();
   const ref=getRefCode();
-  const botLink='https://t.me/ChainCheckBot/play?startapp=CHAL_'+btoa(JSON.stringify({n:name,s:S.score,d:S.dayNum})).replace(/=/g,'');
+  const botLink='https://t.me/ChainCheckGameBot/play?startapp=CHAL_'+btoa(JSON.stringify({n:name,s:S.score,d:S.dayNum})).replace(/=/g,'');
   const text='⚔️ I scored '+S.score+' on CHAINCHECK #'+S.dayNum+'. Beat me!\n\n'+botLink;
   const btn=document.getElementById('btn-challenge');
   shareText(text, btn, '⚔️ CHALLENGE');
@@ -864,7 +864,7 @@ function setupMenu(){
 }
 
 // ===== STAR SHOP =====
-const BOT_SERVER_URL = ''; // ← SET THIS to your bot server Vercel URL
+const BOT_SERVER_URL = 'https://chaincheck-bot.vercel.app'; // ← SET THIS to your bot server Vercel URL
 
 const SHOP_PRODUCTS = [
   { id: 'extra_3', name: '3 Extra Plays', desc: 'Play 3 more daily rounds today', stars: 25, icon: '🎯', action: () => { addExtraPlays(3); addChecks(50); addTotalEarned(50); addTx('bonus', 50, 'Bonus: 3 plays pack'); }},
