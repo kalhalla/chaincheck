@@ -419,7 +419,7 @@ function renderLeaderboard(containerId, dayNum, playerScore, playerName){
   let html='<div class="lb-title">TODAY\'S LEADERBOARD</div><div class="lb-list">';
   lb.forEach((entry,i)=>{
     const isTop3=i<3;
-    html+=`<div class="lb-row${entry.you?' you':''}"><div class="lb-rank${isTop3?' top3':''}">${i+1}</div><div class="lb-name${entry.you?' you':''}">${entry.you?'→ YOU':entry.name}</div><div class="lb-score${entry.you?' you':''}">${entry.score}</div></div>`;
+    html+=`<div class="lb-row${entry.you?' you':''}"><div class="lb-rank${isTop3?' top3':''}">${i+1}</div><div class="lb-name${entry.you?' you':''}">${entry.you?'→ '+entry.name:entry.name}</div><div class="lb-score${entry.you?' you':''}">${entry.score}</div></div>`;
   });
   html+='</div>';
   el.innerHTML=html;
